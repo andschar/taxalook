@@ -1,0 +1,11 @@
+*.Rhistory
+.Rproj.user
+
+cred/
+data/
+tests/
+
+# package
+taxalook_*
+
+TODO
