@@ -84,15 +84,42 @@ taxonomy_col = function() {
 #' @noRd
 #' 
 fl_download = function() {
-  tmp = file.path(tempdir(), 'taxalook.rds')
+  tmp = file.path(tempdir(), 'taxalook.sqlite3.gz')
   if (!file.exists(tmp)) {
     message('Downloading data..')
-    qurl = 'https://zenodo.org/record/5948864/files/taxalook.rds'
-    utils::download.file(qurl, 
+    # HACK this has to done, because doi.org is the only permanent link between versions
+    qurl_permanent = 'https://doi.org/10.5281/zenodo.5948863'
+    req = httr::GET(qurl_permanent)
+    cont = httr::content(req, as = 'text')
+    qurl = regmatches(cont, regexpr('https://zenodo.org/record/[0-9]+/files/taxalook.sqlite3.gz', cont))
+    utils::download.file(qurl,
                          destfile = tmp,
                          quiet = TRUE)
   }
-  readRDS(tmp)
+  destfile = file.path(tempdir(), 'taxalook.sqlite3')
+  R.utils::gunzip(tmp, destname = destfile)
+  con = DBI::dbConnect(RSQLite::SQLite(), destfile)
+  # TODO convert the whole process to actual SQL queries at some point.
+  tl_id = DBI::dbGetQuery(con, "SELECT * FROM tl_id")
+  data.table::setDT(tl_id)
+  tl_taxonomy = DBI::dbGetQuery(con, "SELECT * FROM tl_taxonomy")
+  data.table::setDT(tl_taxonomy)
+  tl_habitat = DBI::dbGetQuery(con, "SELECT * FROM tl_habitat")
+  data.table::setDT(tl_habitat)
+  tl_group = DBI::dbGetQuery(con, "SELECT * FROM tl_group")
+  data.table::setDT(tl_group)
+  tl_country = DBI::dbGetQuery(con, "SELECT * FROM tl_country")
+  data.table::setDT(tl_country)
+  tl_continent = DBI::dbGetQuery(con, "SELECT * FROM tl_continent")
+  data.table::setDT(tl_continent)
+  DBI::dbDisconnect(con)
+  
+  return(list(tl_id = tl_id,
+              tl_taxonomy = tl_taxonomy,
+              tl_habitat = tl_habitat,
+              tl_group = tl_group,
+              tl_country = tl_country,
+              tl_continent = tl_continent))
 }
 
 #' Query the taxa lookup up database.
@@ -141,7 +168,8 @@ tl_query = function(tax = NULL,
   }
   tax_match = match.arg(tax_match, choices = c('fuzzy', 'exact'))
   # data
-  dat = fl_download()
+  l = fl_download()
+  dat = Reduce(function(...) merge(..., by = 'tl_id', all = TRUE), l)
   # select columns
   col = c('tl_id', 'taxon')
   if (taxonomy) { col = c(col, taxonomy_col()) }

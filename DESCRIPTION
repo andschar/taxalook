@@ -1,6 +1,6 @@
 Package: taxalook
-Version: 0.0.1
-Date: 2022-02-02
+Version: 0.0.2
+Date: 2022-02-11
 Title: Taxa Information Database
 Authors@R: c(
     person("Andreas", "Scharmüller",
@@ -16,9 +16,10 @@ Depends:
     R (>= 3.5.0)
 Imports:
     data.table (>= 1.13.0),
+    R.utils,
     utils
 License: MIT + file LICENSE
-URL: https://github.com/andschar/taxa-lookup
-BugReports: https://github.com/andschar/taxa-lookup/issues
+URL: https://github.com/andschar/taxalook
+BugReports: https://github.com/andschar/taxalook/issues
 RoxygenNote: 7.1.1
 Encoding: UTF-8
