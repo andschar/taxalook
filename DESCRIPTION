@@ -1,6 +1,6 @@
 Package: taxalook
 Version: 0.0.2
-Date: 2022-02-11
+Date: 2022-02-18
 Title: Taxa Information Database
 Authors@R: c(
     person("Andreas", "Scharmüller",
@@ -16,6 +16,8 @@ Depends:
     R (>= 3.5.0)
 Imports:
     data.table (>= 1.13.0),
+    DBI,
+    RSQLite,
     R.utils,
     utils
 License: MIT + file LICENSE
