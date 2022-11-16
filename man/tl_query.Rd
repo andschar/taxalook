@@ -5,49 +5,40 @@
 \title{Query the taxa lookup up database.}
 \usage{
 tl_query(
-  tax = NULL,
-  tax_match = "fuzzy",
-  tl_id = NULL,
-  taxonomy = FALSE,
-  id = FALSE,
-  group = FALSE,
-  habitat = FALSE,
-  continent = FALSE,
-  country = FALSE
+  query = NULL,
+  query_match = "exact",
+  from = NULL,
+  what = "taxonomy",
+  force_download = FALSE
 )
 }
 \arguments{
-\item{tax}{character vector; Which taxa should be returned?}
+\item{query}{character vector; Which taxa should be returned?}
 
-\item{tax_match}{Should \code{tax} names be matched exactly or by pattern?
-Can be one of fuzzy (default) or exact.}
+\item{query_match}{Should \code{query} names be matched exactly or by pattern?
+Can be one of exact (default) or fuzzy.}
 
-\item{tl_id}{integer vector; Should a specific taxalook id entry be returned?}
+\item{from}{Which column should be used for matching? Can be one of:
+'tl_id', 'gbif_id', 'ncbi_id', 'worms_id' or 'epa_species_number'.
+If NULL (default), queries are matched against all columns (for taxa names).}
 
-\item{taxonomy}{logical; Should taxonomic information be returned?}
+\item{what}{What should be returned? Can be one of 'id' (default), 'continent',
+'country', 'group', 'habitat' or 'taxonomy'.}
 
-\item{id}{logical; Should identifiers for other databases be returned?}
-
-\item{group}{logical; Should ecological groups be returned?}
-
-\item{habitat}{logical; Should habitat information be returned?}
-
-\item{continent}{logical; Should continental occurrence information be returned?}
-
-\item{country}{logical; Should country occurrence information be returned?}
+\item{force_download}{Force download anyway? Helpful if downloaded file is corrupt.}
 }
 \value{
-Returns a list of three data.tables (filtered data base query results, aggregated data base query results, meta information)
+Returns a data.table.
 }
 \description{
 Query the taxa lookup up database.
 }
 \examples{
-tl_query(tax = 'Oncorhynchus', group = TRUE)
-tl_query(tax = c('Daphnia', 'Perla'), habitat = TRUE, tax_match = 'exact')
-tl_query(tax = 'quercus', country = TRUE, id = TRUE)
+tl_query(query = 'Oncorhynchus', what = 'group')
+tl_query(query = c('Daphnia', 'Perla'), what = 'habitat', query_match = 'exact')
+tl_query(query = 'quercus', query_match = 'fuzzy', what = c('continent'))
 
 }
 \author{
-Andreas Scharmueller \email{andschar@protonmail.com}
+Andreas Scharmueller \email{andschar@proton.me}
 }

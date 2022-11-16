@@ -1,6 +1,6 @@
 #' Country columns.
 #' 
-#' @author Andreas Scharmueller \email{andschar@@protonmail.com}
+#' @author Andreas Scharmueller \email{andschar@@proton.me}
 #' 
 #' @noRd
 #' 
@@ -32,7 +32,7 @@ country_col = function() {
 }
 #' Continent columns.
 #' 
-#' @author Andreas Scharmueller \email{andschar@@protonmail.com}
+#' @author Andreas Scharmueller \email{andschar@@proton.me}
 #' 
 #' @noRd
 #' 
@@ -42,7 +42,7 @@ continent_col = function() {
 }
 #' Group columns.
 #' 
-#' @author Andreas Scharmueller \email{andschar@@protonmail.com}
+#' @author Andreas Scharmueller \email{andschar@@proton.me}
 #' 
 #' @noRd 
 #' 
@@ -59,7 +59,7 @@ habitat_col = function() {
 }
 #' ID columns.
 #' 
-#' @author Andreas Scharmueller \email{andschar@@protonmail.com}
+#' @author Andreas Scharmueller \email{andschar@@proton.me}
 #' 
 #' @noRd
 #' 
@@ -68,7 +68,7 @@ id_col = function() {
 }
 #' Taxonomy columns.
 #' 
-#' @author Andreas Scharmueller \email{andschar@@protonmail.com}
+#' @author Andreas Scharmueller \email{andschar@@proton.me}
 #' 
 #' @noRd
 #' 
@@ -79,14 +79,14 @@ taxonomy_col = function() {
 }
 #' Download compressed database.
 #' 
-#' @author Andreas Scharmueller \email{andschar@@protonmail.com}
+#' @author Andreas Scharmueller \email{andschar@@proton.me}
 #' 
 #' @noRd
 #' 
-fl_download = function() {
+fl_download = function(force_download) {
   destfile_gz = file.path(tempdir(), 'taxalook.sqlite3.gz')
   destfile = file.path(tempdir(), 'taxalook.sqlite3')
-  if (!file.exists(destfile_gz) && !file.exists(destfile)) {
+  if (!file.exists(destfile_gz) && !file.exists(destfile) || force_download) {
     message('Downloading data..')
     # HACK this has to done, because doi.org is the only permanent link between versions
     qurl_permanent = 'https://doi.org/10.5281/zenodo.5948863'
@@ -98,97 +98,103 @@ fl_download = function() {
                          quiet = TRUE)
     R.utils::gunzip(destfile_gz, destname = destfile)
   }
-  con = DBI::dbConnect(RSQLite::SQLite(), destfile)
-  # TODO convert the whole process to actual SQL queries at some point.
-  tl_id = DBI::dbGetQuery(con, "SELECT * FROM tl_id")
-  data.table::setDT(tl_id)
-  tl_taxonomy = DBI::dbGetQuery(con, "SELECT * FROM tl_taxonomy")
-  data.table::setDT(tl_taxonomy)
-  tl_habitat = DBI::dbGetQuery(con, "SELECT * FROM tl_habitat")
-  data.table::setDT(tl_habitat)
-  tl_group = DBI::dbGetQuery(con, "SELECT * FROM tl_group")
-  data.table::setDT(tl_group)
-  tl_country = DBI::dbGetQuery(con, "SELECT * FROM tl_country")
-  data.table::setDT(tl_country)
-  tl_continent = DBI::dbGetQuery(con, "SELECT * FROM tl_continent")
-  data.table::setDT(tl_continent)
+  
+  return(destfile)
+}
+
+#' Read compressed database.
+#'
+#' @author Andreas Scharmueller \email{andschar@@proton.me}
+#'
+#' @noRd
+#'
+fl_read = function(fl) {
+  con = DBI::dbConnect(RSQLite::SQLite(), fl)
+  q = "SELECT *
+       FROM tl_id
+       LEFT JOIN tl_continent USING (tl_id)
+       LEFT JOIN tl_country USING (tl_id)
+       LEFT JOIN tl_group USING (tl_id)
+       LEFT JOIN tl_habitat USING (tl_id)
+       LEFT JOIN tl_taxonomy USING (tl_id)"
+  out = DBI::dbGetQuery(con, q)
+  data.table::setDT(out)
   DBI::dbDisconnect(con)
   
-  return(list(tl_id = tl_id,
-              tl_taxonomy = tl_taxonomy,
-              tl_habitat = tl_habitat,
-              tl_group = tl_group,
-              tl_country = tl_country,
-              tl_continent = tl_continent))
+  return(out)
 }
 
 #' Query the taxa lookup up database.
 #' 
 #' @import data.table
 #' 
-#' @param tax character vector; Which taxa should be returned?
-#' @param tax_match Should \code{tax} names be matched exactly or by pattern?
-#' Can be one of fuzzy (default) or exact.
-#' @param tl_id integer vector; Should a specific taxalook id entry be returned?
-#' @param taxonomy logical; Should taxonomic information be returned?
-#' @param id logical; Should identifiers for other databases be returned?
-#' @param group logical; Should ecological groups be returned?
-#' @param habitat logical; Should habitat information be returned?
-#' @param continent logical; Should continental occurrence information be returned?
-#' @param country logical; Should country occurrence information be returned?
+#' @param query character vector; Which taxa should be returned?
+#' @param query_match Should \code{query} names be matched exactly or by pattern?
+#' Can be one of exact (default) or fuzzy.
+#' @param from Which column should be used for matching? Can be one of:
+#' 'tl_id', 'gbif_id', 'ncbi_id', 'worms_id' or 'epa_species_number'.
+#' If NULL (default), queries are matched against all columns (for taxa names).
+#' @param what What should be returned? Can be one of 'id' (default), 'continent',
+#' 'country', 'group', 'habitat' or 'taxonomy'.
+#' @param force_download Force download anyway? Helpful if downloaded file is corrupt.
 #'
-#' @return Returns a list of three data.tables (filtered data base query results, aggregated data base query results, meta information)
+#' @return Returns a data.table.
 #' 
-#' @author Andreas Scharmueller \email{andschar@@protonmail.com}
+#' @author Andreas Scharmueller \email{andschar@@proton.me}
 #' 
 #' @export
 #' 
 #' @examples 
-#' tl_query(tax = 'Oncorhynchus', group = TRUE)
-#' tl_query(tax = c('Daphnia', 'Perla'), habitat = TRUE, tax_match = 'exact')
-#' tl_query(tax = 'quercus', country = TRUE, id = TRUE)
+#' tl_query(query = 'Oncorhynchus', what = 'group')
+#' tl_query(query = c('Daphnia', 'Perla'), what = 'habitat', query_match = 'exact')
+#' tl_query(query = 'quercus', query_match = 'fuzzy', what = c('continent'))
 #'
-tl_query = function(tax = NULL,
-                    tax_match = 'fuzzy',
-                    tl_id = NULL,
-                    taxonomy = FALSE,
-                    id = FALSE,
-                    group = FALSE,
-                    habitat = FALSE,
-                    continent = FALSE,
-                    country = FALSE) {
-  # to avoid NOTE in R CMD check --as-cran
-  tl_id = NULL
+tl_query = function(query = NULL,
+                    query_match = 'exact',
+                    from = NULL,
+                    what = 'taxonomy',
+                    force_download = FALSE) {
   # checks
-  if (!is.null(tax) && !is.null(tl_id)) {
-    stop('Please provide only one of tax or tl_id.')
+  if (is.null(query)) {
+    message('No query supplied. All entries are returned.')
   }
-  if (is.null(tax) && is.null(tl_id)) {
-    message('No taxon or tl_id supplied. All entries are returned.')
-  }
-  tax_match = match.arg(tax_match, choices = c('fuzzy', 'exact'))
+  query_match = match.arg(query_match, choices = c('exact', 'fuzzy'))
   # data
-  l = fl_download()
-  dat = Reduce(function(...) merge(..., by = 'tl_id', all = TRUE), l)
+  fl = fl_download(force_download = force_download)
+  dat = fl_read(fl = fl)
+  # filter rows
+  if (!is.null(query)) {
+    if (!is.null(from)) {
+      if (from == 'epa_species_number') {
+        dat = dat[epa_species_number == query]
+      }
+      if (from == 'gbif_id') {
+        dat = dat[gbif_id == query]
+      }
+      if (from == 'tl_id') {
+        dat = dat[tl_id == query]
+      }
+      if (from == 'worms_id') {
+        dat = dat[worms_id == query]
+      }
+    } else {
+      if (query_match == 'exact') {
+        dat = dat[dat[, Reduce(`|`, lapply(.SD, `%in%`, query))]]
+      }
+      if (query_match == 'fuzzy') {
+        dat = dat[dat[, Reduce(`|`, lapply(.SD, `%ilike%`, paste0(query, collapse = '|')))]]
+      }
+    }
+  }
   # select columns
   col = c('tl_id', 'taxon')
-  if (taxonomy) { col = c(col, taxonomy_col()) }
-  if (id) { col = c(col, id_col()) }
-  if (group) { col = c(col, group_col()) }
-  if (habitat) { col = c(col, habitat_col()) }
-  if (continent) { col = c(col, continent_col()) }
-  if (country) { col = c(col, country_col()) }
-  out = dat[ , .SD, .SDcols = col ]
-  # filter rows
-  if (!is.null(tax)) {
-    if (tax_match == 'exact') {
-      out = out[out[ , Reduce(`|`, lapply(.SD, `%in%`, tax)) ]]
-    }
-    if (tax_match == 'fuzzy') {
-      out = out[out[ , Reduce(`|`, lapply(.SD, `%ilike%`, paste0(tax, collapse = '|'))) ]]  
-    }
-  } else if (!is.null(tl_id)) {
-    out = out[ tl_id %in% tl_id ]
-  }
-  return(out)
+  if ('taxonomy' %in% what) { col = c(col, taxonomy_col()) }
+  if ('id' %in% what) { col = c(col, id_col()) }
+  if ('group' %in% what) { col = c(col, group_col()) }
+  if ('habitat' %in% what) { col = c(col, habitat_col()) }
+  if ('continent' %in% what) { col = c(col, continent_col()) }
+  if ('country' %in% what) { col = c(col, country_col()) }
+  dat = dat[ , .SD, .SDcols = col ]
+  
+  return(dat)
 }
