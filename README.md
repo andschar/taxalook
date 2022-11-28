@@ -29,12 +29,12 @@ require(taxalook)
 tax = c('Pimephales promelas', 'Daphnia magna')
 
 tl_query(tax) # Only taxalook identifier and taxon name
-tl_query(tax, taxonomy = TRUE) # Adding taxonomy
-tl_query(tax, id = TRUE) # Adding identifiers from other databases
-tl_query(tax, group = TRUE) # Adding convenient grouping information
-tl_query(tax, habitat = TRUE) # Adding habitat information
-tl_query(tax, continent = TRUE) # Adding continent occurrence information
-tl_query(tax, country = TRUE) # Adding country occurrence information
+tl_query(tax, what = 'taxonomy') # Taxonomy information
+tl_query(tax, what = 'id') # Identifiers to other databases
+tl_query(tax, what = 'group') # Taxa convenient grouping
+tl_query(tax, what = 'habitat') # Habitat information
+tl_query(tax, what = 'continent') # Continent occurrence information
+tl_query(tax, what = 'country') # Country occurrence information
 ```
 
 ### Raw Data only

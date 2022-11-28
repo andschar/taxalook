@@ -187,7 +187,7 @@ tl_query = function(query = NULL,
     }
   }
   # select columns
-  col = c('tl_id', 'taxon')
+  col = c('tl_id')
   if ('taxonomy' %in% what) { col = c(col, taxonomy_col()) }
   if ('id' %in% what) { col = c(col, id_col()) }
   if ('group' %in% what) { col = c(col, group_col()) }
