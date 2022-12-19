@@ -30,6 +30,7 @@ country_col = function() {
     "vg", "vi", "vn", "vu", "wf", "ws", "xk", "ye", "yt", "za", "zm", 
     "zw", "zz")
 }
+
 #' Continent columns.
 #' 
 #' @author Andreas Scharmueller \email{andschar@@proton.me}
@@ -40,6 +41,7 @@ continent_col = function() {
   c("africa", "asia", "europe", "america_north", 
     "america_south", "oceania")
 }
+
 #' Group columns.
 #' 
 #' @author Andreas Scharmueller \email{andschar@@proton.me}
@@ -50,6 +52,7 @@ group_col = function() {
   c("fungi", "algae", "macrophyte", "plant", 
     "invertebrate", "fish", "amphibia", "reptilia", "aves", "mammalia")
 }
+
 #' Habitat columns.
 #' 
 #' @noRd
@@ -57,6 +60,7 @@ group_col = function() {
 habitat_col = function() {
   c("brack", "fresh", "marin", "terre")
 }
+
 #' ID columns.
 #' 
 #' @author Andreas Scharmueller \email{andschar@@proton.me}
@@ -66,6 +70,7 @@ habitat_col = function() {
 id_col = function() {
   c("gbif_id", "worms_id", "epa_species_number")
 }
+
 #' Taxonomy columns.
 #' 
 #' @author Andreas Scharmueller \email{andschar@@proton.me}
@@ -77,6 +82,17 @@ taxonomy_col = function() {
     "genus", "species", "family", "tax_order", "class", "superclass", 
     "subphylum_div", "phylum_division", "kingdom")
 }
+
+#' Trophic level columns.
+#' 
+#' @author Andreas Scharmueller \email{andschar@@proton.me}
+#' 
+#' @noRd
+#' 
+trophic_lvl_col = function() {
+  c("autotroph", "heterotroph")
+}
+
 #' Download compressed database.
 #' 
 #' @author Andreas Scharmueller \email{andschar@@proton.me}
@@ -116,7 +132,8 @@ fl_read = function(fl) {
        LEFT JOIN tl_country USING (tl_id)
        LEFT JOIN tl_group USING (tl_id)
        LEFT JOIN tl_habitat USING (tl_id)
-       LEFT JOIN tl_taxonomy USING (tl_id)"
+       LEFT JOIN tl_taxonomy USING (tl_id)
+       LEFT JOIN tl_trophic_lvl USING (tl_id)"
   out = DBI::dbGetQuery(con, q)
   data.table::setDT(out)
   DBI::dbDisconnect(con)
@@ -134,8 +151,8 @@ fl_read = function(fl) {
 #' @param from Which column should be used for matching? Can be one of:
 #' 'tl_id', 'gbif_id', 'ncbi_id', 'worms_id' or 'epa_species_number'.
 #' If NULL (default), queries are matched against all columns (for taxa names).
-#' @param what What should be returned? Can be one of 'id' (default), 'continent',
-#' 'country', 'group', 'habitat' or 'taxonomy'.
+#' @param what What should be returned? Can be one or multiple of 'id' (default),
+#' 'continent', 'country', 'group', 'habitat', 'taxonomy' or 'trophic_lvl'.
 #' @param force_download Force download anyway? Helpful if downloaded file is corrupt.
 #'
 #' @return Returns a data.table.
@@ -152,13 +169,31 @@ fl_read = function(fl) {
 tl_query = function(query = NULL,
                     query_match = 'exact',
                     from = NULL,
-                    what = 'taxonomy',
+                    what = 'id',
                     force_download = FALSE) {
   # checks
   if (is.null(query)) {
     message('No query supplied. All entries are returned.')
   }
-  query_match = match.arg(query_match, choices = c('exact', 'fuzzy'))
+  query_match = match.arg(query_match,
+                          choices = c('exact', 'fuzzy'))
+  if (!is.null(from)) {
+    from = match.arg(from,
+                     choices = c(NULL,
+                                 'epa_species_number',
+                                 'gbif_id',
+                                 'tl_id',
+                                 'worms_id'))
+  }
+  what = match.arg(what,
+                   choices = c('id',
+                               'continent',
+                               'country',
+                               'group',
+                               'habitat',
+                               'taxonomy',
+                               'trophic_lvl'),
+                   several.ok = TRUE)
   # data
   fl = fl_download(force_download = force_download)
   dat = fl_read(fl = fl)
@@ -188,12 +223,13 @@ tl_query = function(query = NULL,
   }
   # select columns
   col = c('tl_id')
-  if ('taxonomy' %in% what) { col = c(col, taxonomy_col()) }
-  if ('id' %in% what) { col = c(col, id_col()) }
-  if ('group' %in% what) { col = c(col, group_col()) }
-  if ('habitat' %in% what) { col = c(col, habitat_col()) }
   if ('continent' %in% what) { col = c(col, continent_col()) }
   if ('country' %in% what) { col = c(col, country_col()) }
+  if ('group' %in% what) { col = c(col, group_col()) }
+  if ('habitat' %in% what) { col = c(col, habitat_col()) }
+  if ('id' %in% what) { col = c(col, id_col()) }
+  if ('taxonomy' %in% what) { col = c(col, taxonomy_col()) }
+  if ('trophic_lvl' %in% what) { col = c(col, trophic_lvl_col()) }
   dat = dat[ , .SD, .SDcols = col ]
   
   return(dat)
