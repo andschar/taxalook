@@ -108,7 +108,7 @@ fl_download = function(force_download) {
     qurl_permanent = 'https://doi.org/10.5281/zenodo.5948863'
     req = httr::GET(qurl_permanent)
     cont = httr::content(req, as = 'text')
-    qurl = regmatches(cont, regexpr('https://zenodo.org/record/[0-9]+/files/taxalook.sqlite3.gz', cont))
+    qurl = regmatches(cont, regexpr('https://zenodo.org/records/[0-9]+/files/taxalook.sqlite3.gz', cont))
     utils::download.file(qurl,
                          destfile = destfile_gz,
                          quiet = TRUE)

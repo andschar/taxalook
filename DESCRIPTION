@@ -1,6 +1,6 @@
 Package: taxalook
 Version: 0.0.4
-Date: 2022-11-24
+Date: 2024-05-23
 Title: Taxa Information Database
 Authors@R: c(
     person("Andreas", "Scharmüller",
