@@ -8,7 +8,7 @@ tl_query(
   query = NULL,
   query_match = "exact",
   from = NULL,
-  what = "taxonomy",
+  what = "id",
   force_download = FALSE
 )
 }
@@ -22,8 +22,8 @@ Can be one of exact (default) or fuzzy.}
 'tl_id', 'gbif_id', 'ncbi_id', 'worms_id' or 'epa_species_number'.
 If NULL (default), queries are matched against all columns (for taxa names).}
 
-\item{what}{What should be returned? Can be one of 'id' (default), 'continent',
-'country', 'group', 'habitat' or 'taxonomy'.}
+\item{what}{What should be returned? Can be one or multiple of 'id' (default),
+'continent', 'country', 'group', 'habitat', 'taxonomy' or 'trophic_lvl'.}
 
 \item{force_download}{Force download anyway? Helpful if downloaded file is corrupt.}
 }
