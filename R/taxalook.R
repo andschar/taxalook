@@ -78,7 +78,7 @@ id_col = function() {
 #' @noRd
 #' 
 taxonomy_col = function() {
-  c("rank", "common_name", "latin_name", 
+  c("rank", "common_name", "taxon", 
     "genus", "species", "family", "tax_order", "class", "superclass", 
     "subphylum_div", "phylum_division", "kingdom")
 }
